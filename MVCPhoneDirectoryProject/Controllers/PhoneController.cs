@@ -14,20 +14,13 @@ namespace MVCPhoneDirectoryProject.Controllers
 {
     public class PhoneController : Controller
     {
-        //private MongoDBContext dBContext;
-        //private IMongoCollection<PhoneModel> phoneCollection;
+
         IMongoClient mongoClient = new MongoClient("mongodb://localhost:27017");
 
         public PhoneController()
         {
 
 
-            // var client = new MongoClient("");
-            //var database = client.GetDatabase("phonedirectoryDB");
-            //var collection = database.GetCollection<PhoneModel>("phonedirectory");
-
-            //dBContext = new MongoDBContext();
-            //phoneCollection = dBContext.database.GetCollection<PhoneModel> ( "phonedirectory" );
         }
         // GET: Phone
         public ActionResult Index()
@@ -35,9 +28,7 @@ namespace MVCPhoneDirectoryProject.Controllers
             var database = mongoClient.GetDatabase("phonedirectoryDB");
             var collection = database.GetCollection<PhoneModel>("phonedirectory");
             var phones = collection.Find<PhoneModel>(a => true).ToList();
-
-
-            //List<PhoneModel> phones = phoneCollection.AsQueryable<PhoneModel>().ToList();
+           //List<PhoneModel> phones = phoneCollection.AsQueryable<PhoneModel>().ToList();
             return View(phones);
         }
 
@@ -48,10 +39,6 @@ namespace MVCPhoneDirectoryProject.Controllers
             var database = mongoClient.GetDatabase("phonedirectoryDB");
             var collection = database.GetCollection<PhoneModel>("phonedirectory");
             var phones = collection.AsQueryable<PhoneModel>().SingleOrDefault(x => x.Id == phoneId);
-            
-            //var phoneId = new ObjectId(id);
-            //var phone = phoneCollection.AsQueryable<PhoneModel>().SingleOrDefault(x => x.Id == phoneId);
-            //return View(phone);
             return View(phones);
 
         }
@@ -68,9 +55,6 @@ namespace MVCPhoneDirectoryProject.Controllers
         {
             try
             {
-                // TODO: Add insert logic here
-                //phoneCollection.InsertOne(phone);collection
-
                 var database = mongoClient.GetDatabase("phonedirectoryDB");
                 var collection = database.GetCollection<PhoneModel>("phonedirectory");
                 collection.InsertOne(phone);
@@ -146,5 +130,52 @@ namespace MVCPhoneDirectoryProject.Controllers
                 return View();
             }
         }
+        public ActionResult Report()
+        {
+
+            return View();
+        }
+        [HttpPost]
+        public ActionResult Report(string id)
+        {
+            try
+            {
+                var phoneId = new ObjectId(id);
+                var database = mongoClient.GetDatabase("phonedirectoryDB");
+                var collection = database.GetCollection<PhoneModel>("phonedirectory");
+                var phones = collection.Find<PhoneModel>(a => true).ToList();
+                var phone = collection.AsQueryable<PhoneModel>().SingleOrDefault(x => x.Id == phoneId);
+
+
+                var database2 = mongoClient.GetDatabase("reportsDB");
+                var collection2 = database.GetCollection<ReportModel>("reports");
+
+                var countOfPeople=0;
+                foreach(var item in phones)
+                {
+                    if (item.Location == phone.Location) ;
+                    countOfPeople++;
+                }
+                var stringcountOfPeople = countOfPeople.ToString();
+                collection2.InsertOneAsync(new ReportModel { UUID = phone.UUID, Location = phone.Location, NumberOfPeople= stringcountOfPeople });
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                return View();
+            }
+        }
+
+        public ActionResult ListOfReports()
+        {
+
+
+            var database = mongoClient.GetDatabase("phonedirectoryDB");
+            var collection = database.GetCollection<ReportModel>("reports");
+            var reports = collection.Find<ReportModel>(a => true).ToList();
+
+            return View(reports);
+        }
+       
     }
 }
